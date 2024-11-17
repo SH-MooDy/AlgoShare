@@ -1,22 +1,36 @@
 import socket
 import threading
 
-clients = []  # 연결된 모든 클라이언트를 저장
+clients = []  # 연결된 모든 클라이언트 소켓을 저장
+nicknames = {}  # 클라이언트 소켓과 닉네임 매핑
 
-def broadcast(message, sender_socket):
+def broadcast(message):
     for client in clients:
-        if client != sender_socket:  # 메시지를 보낸 클라이언트에게는 다시 전송하지 않음
-            client.send(message)
+        client.send(message)
 
 def handle_client(client_socket):
-    while True:
-        try:
+    try:
+        # 클라이언트로부터 닉네임 수신
+        nickname = client_socket.recv(1024).decode('utf-8')
+        nicknames[client_socket] = nickname
+        clients.append(client_socket)
+        
+        # 다른 클라이언트에게 알림
+        broadcast(f"{nickname} has joined the chat!".encode('utf-8'))
+        print(f"{nickname} connected.")
+
+        # 메시지 처리
+        while True:
             message = client_socket.recv(1024)
-            broadcast(message, client_socket)
-        except:
-            clients.remove(client_socket)
-            client_socket.close()
-            break
+            broadcast(f"{nickname}: {message.decode('utf-8')}".encode('utf-8'))
+
+    except:
+        # 클라이언트 연결 종료 시
+        print(f"{nicknames[client_socket]} disconnected.")
+        clients.remove(client_socket)
+        broadcast(f"{nicknames[client_socket]} has left the chat.".encode('utf-8'))
+        del nicknames[client_socket]
+        client_socket.close()
 
 def start_server():
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -27,8 +41,8 @@ def start_server():
     while True:
         client_socket, addr = server.accept()
         print(f"Connected to {addr}")
-        clients.append(client_socket)
         
+        # 클라이언트 처리 스레드 생성
         thread = threading.Thread(target=handle_client, args=(client_socket,))
         thread.start()
 
