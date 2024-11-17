@@ -17,7 +17,7 @@ def start_client():
     client.connect(('127.0.0.1', 8888))  # 서버의 IP와 포트로 연결
 
     # 서버에 닉네임 전송
-    nickname = input("Enter your nickname: ")
+    nickname = input("사용할 닉네임을 입력하세요: ")
     client.send(nickname.encode('utf-8'))
 
     # 수신 스레드 시작
