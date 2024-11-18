@@ -16,7 +16,7 @@ def handle_client(client_socket):
         clients.append(client_socket)
         
         # 다른 클라이언트에게 알림
-        broadcast(f"{nickname} has joined the chat!".encode('utf-8'))
+        broadcast(f"{nickname}님이 참여하였습니다".encode('utf-8'))
         print(f"{nickname} connected.")
 
         # 메시지 처리
@@ -28,7 +28,7 @@ def handle_client(client_socket):
         # 클라이언트 연결 종료 시
         print(f"{nicknames[client_socket]} disconnected.")
         clients.remove(client_socket)
-        broadcast(f"{nicknames[client_socket]} has left the chat.".encode('utf-8'))
+        broadcast(f"{nicknames[client_socket]}님이 접속을 종료했습니다.".encode('utf-8'))
         del nicknames[client_socket]
         client_socket.close()
 
