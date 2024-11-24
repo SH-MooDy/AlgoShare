@@ -34,6 +34,11 @@ def send_chat(event=None):
     if message:
         client.send(f"{nickname}: {message}".encode('utf-8'))
         chat_entry.delete(0, tk.END)
+        chat_output.config(state=tk.NORMAL)
+        chat_output.insert(tk.END, f"{nickname}: {message}" + "\n")
+        chat_output.config(state=tk.DISABLED)
+        chat_output.see(tk.END)
+        
 
 
 # 닉네임 설정 후 서버 연결
@@ -80,6 +85,7 @@ tk.Label(chat_frame, text="Chat").pack(anchor="w")
 chat_output = tk.Text(chat_frame, height=20, width=30, state=tk.DISABLED)
 chat_output.pack(fill=tk.BOTH, expand=True)
 
+# 채팅 입력창
 chat_entry = tk.Entry(root, width=100)
 chat_entry.pack(side=tk.BOTTOM, fill=tk.X)
 chat_entry.bind("<Return>", send_chat)
