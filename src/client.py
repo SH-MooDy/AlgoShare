@@ -2,104 +2,94 @@ import socket
 import threading
 import tkinter as tk
 
-# 서버에서 받은 메시지를 출력하는 함수
+
+# 서버에서 받은 메시지를 처리하는 함수
 def receive_data():
     while True:
         try:
             data = client.recv(1024).decode('utf-8')
-            if data:
-                if data.startswith("CODE:"):  # 코드가 변경되면
-                    # 코드 갱신
-                    code_display.config(state=tk.NORMAL)
-                    code_display.delete(1.0, tk.END)  # 기존 코드 삭제
-                    code_display.insert(tk.END, data[5:])  # 새로운 코드 삽입
-                    code_display.config(state=tk.DISABLED)
-                else:
-                    display_message(data)  # 채팅 메시지 출력
-        except:
+            if data.startswith("CODE_UPDATE:"):  # 코드 업데이트
+                updated_code = data[len("CODE_UPDATE:"):]
+                code_display.delete("1.0", tk.END)
+                code_display.insert(tk.END, updated_code)
+            else:  # 채팅 메시지
+                chat_output.config(state=tk.NORMAL)
+                chat_output.insert(tk.END, data + "\n")
+                chat_output.config(state=tk.DISABLED)
+                chat_output.see(tk.END)  # 최신 메시지로 스크롤
+        except Exception as e:
+            print(f"Error: {e}")
             break
 
-# 서버로 데이터를 보내는 함수 (채팅 메시지 또는 코드)
-def send_data(event=None):
-    # 채팅 메시지 가져오기
-    chat_message = chat_entry.get().strip()
-    if chat_message:
-        display_message(f"You: {chat_message}")
-        client.send(f"{nickname}: {chat_message}".encode('utf-8'))  # 서버로 채팅 메시지 전송
-        chat_entry.delete(0, tk.END)  # 입력창 비우기
 
-    # 코드 수정 가져오기
-    code_message = code_entry.get("1.0", tk.END).strip()
-    if code_message:
-        client.send(f"CODE:{code_message}".encode('utf-8'))  # 코드 전송
-        code_entry.delete("1.0", tk.END)  # 입력창 비우기
+# 코드 입력 내용 서버로 전송
+def code_update(event):
+    updated_code = code_display.get("1.0", tk.END).strip()
+    client.send(f"CODE_UPDATE:{updated_code}".encode('utf-8'))
 
-# 메시지를 채팅 영역에 표시
-def display_message(message):
-    text_area.config(state=tk.NORMAL)
-    text_area.insert(tk.END, message + "\n")
-    text_area.config(state=tk.DISABLED)
 
-# 닉네임 설정 후 서버에 연결
-def set_nickname_and_connect():
+# 채팅 메시지 서버로 전송
+def send_chat(event=None):
+    message = chat_entry.get().strip()
+    if message:
+        client.send(f"{nickname}: {message}".encode('utf-8'))
+        chat_entry.delete(0, tk.END)
+
+
+# 닉네임 설정 후 서버 연결
+def set_nickname():
     global nickname
-    nickname = nickname_entry.get()  # 닉네임 입력창에서 값 가져오기
+    nickname = nickname_entry.get().strip()
     if nickname:
-        # 서버로 닉네임 전송
         client.send(nickname.encode('utf-8'))
-        nickname_entry.config(state=tk.DISABLED)  # 닉네임 입력창 비활성화
-        nickname_button.config(state=tk.DISABLED)  # 닉네임 버튼 비활성화
-        # GUI 업데이트: 채팅 창으로 이동
-        nickname_label.config(text=f"Nickname: {nickname}")
         nickname_frame.pack_forget()
-        frame.pack()  # 채팅 및 코드 입력 영역 활성화
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
 
 # GUI 설정
 root = tk.Tk()
-root.title("Real-Time Code Share & Chat")
+root.title("AlgoShare")
+root.geometry("800x600")
 
 # 닉네임 입력 창
 nickname_frame = tk.Frame(root)
-nickname_frame.pack()
+nickname_frame.pack(fill=tk.BOTH, expand=True)
 
-nickname_label = tk.Label(nickname_frame, text="Enter your nickname:")
-nickname_label.pack()
+tk.Label(nickname_frame, text="닉네임을 입력하세요:").pack(pady=10)
+nickname_entry = tk.Entry(nickname_frame, width=30)
+nickname_entry.pack(pady=10)
+tk.Button(nickname_frame, text="참가하기", command=set_nickname).pack(pady=10)
 
-nickname_entry = tk.Entry(nickname_frame)
-nickname_entry.pack()
+# 메인 프레임 (코드창, 채팅창)
+main_frame = tk.Frame(root)
 
-nickname_button = tk.Button(nickname_frame, text="Set Nickname", command=set_nickname_and_connect)
-nickname_button.pack()
+# 코드창
+code_frame = tk.Frame(main_frame)
+code_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-# 채팅 및 코드 입력 영역
-frame = tk.Frame(root)
+tk.Label(code_frame, text="Code Editor").pack(anchor="w")
+code_display = tk.Text(code_frame, height=25, width=50)
+code_display.pack(fill=tk.BOTH, expand=True)
+code_display.bind("<KeyRelease>", code_update)
 
-# 채팅 메시지를 표시하는 텍스트 영역
-text_area = tk.Text(frame, height=15, width=60, state=tk.DISABLED)
-text_area.pack()
+# 채팅창
+chat_frame = tk.Frame(main_frame)
+chat_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
 
-# 채팅 입력창
-chat_entry = tk.Entry(frame, width=60)
-chat_entry.pack()
+tk.Label(chat_frame, text="Chat").pack(anchor="w")
+chat_output = tk.Text(chat_frame, height=20, width=30, state=tk.DISABLED)
+chat_output.pack(fill=tk.BOTH, expand=True)
 
-# 코드 수정 입력창
-code_entry = tk.Text(frame, height=8, width=60)
-code_entry.pack()
+chat_entry = tk.Entry(root, width=100)
+chat_entry.pack(side=tk.BOTTOM, fill=tk.X)
+chat_entry.bind("<Return>", send_chat)
 
-# 코드 수정 사항을 표시하는 코드 출력창
-code_display = tk.Text(frame, height=8, width=60, state=tk.DISABLED)
-code_display.pack()
-
-# 전송 버튼
-send_button = tk.Button(frame, text="Send", command=send_data)
-send_button.pack()
-
-# 서버와 연결
+# 소켓 연결
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-client.connect(('127.0.0.1', 8888))  # 서버 IP와 포트로 연결
+client.connect(('127.0.0.1', 8888))  # 서버 주소와 포트, 서버 역할을 할 컴퓨터의 IP주소 입력하기
+                                    # 내부 테스트 시 127.0.0.1 사용하기!!!
 
-# 서버로부터 데이터 수신을 위한 스레드 시작
+# 서버 메시지 수신 스레드 시작
 threading.Thread(target=receive_data, daemon=True).start()
 
-root.bind("<Return>", send_data)  # Enter 키로 전송
 root.mainloop()
