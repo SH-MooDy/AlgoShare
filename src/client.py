@@ -5,28 +5,18 @@ import tkinter as tk
 
 # 서버에서 받은 메시지를 처리하는 함수
 def receive_data():
-    buffer = ""  # 데이터를 병합할 버퍼
     while True:
         try:
-            # 데이터를 계속 수신
             data = client.recv(1024).decode('utf-8')
-            if not data:
-                break
-
-            buffer += data  # 버퍼에 데이터 추가
-            while "\n" in buffer:  # 메시지가 완전히 도착했는지 확인 (구분자는 '\n')
-                message, buffer = buffer.split("\n", 1)  # 한 메시지와 나머지 분리
-                
-                # 메시지 처리
-                if message.startswith("CODE_UPDATE:"):
-                    updated_code = message[len("CODE_UPDATE:"):]
-                    code_display.delete("1.0", tk.END)
-                    code_display.insert(tk.END, updated_code)
-                else:
-                    chat_output.config(state=tk.NORMAL)
-                    chat_output.insert(tk.END, message + "\n")
-                    chat_output.config(state=tk.DISABLED)
-                    chat_output.see(tk.END)  # 최신 메시지로 스크롤
+            if data.startswith("CODE_UPDATE:"):  # 코드 업데이트
+                updated_code = data[len("CODE_UPDATE:"):]
+                code_display.delete("1.0", tk.END)
+                code_display.insert(tk.END, updated_code)
+            else:  # 채팅 메시지
+                chat_output.config(state=tk.NORMAL)
+                chat_output.insert(tk.END, data + "\n")
+                chat_output.config(state=tk.DISABLED)
+                chat_output.see(tk.END)  # 최신 메시지로 스크롤
         except Exception as e:
             print(f"Error: {e}")
             break
