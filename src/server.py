@@ -12,7 +12,7 @@ def handle_client(client_socket, client_addr):
         # 닉네임 수신
         nickname = client_socket.recv(1024).decode('utf-8')
         print(f"{nickname} connected from {client_addr}")
-        broadcast(f"{nickname} 님이 채팅에 참여하였습니다.")
+        broadcast(f"{nickname}님이 채팅에 참여하였습니다.")
 
         while True:
             data = client_socket.recv(1024).decode('utf-8')
