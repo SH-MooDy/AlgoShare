@@ -12,9 +12,9 @@ class AlgoShare:
         self.bb = 2
         self.drawing_enabled = False
         self.highlight_enabled = False
+        self.highlight_eraser_enabled = False
         self.setup_gui()
         self.setup_network()
-        self.highlight_eraser_enabled = False
 
     def setup_gui(self):
         # 닉네임 프레임
@@ -61,8 +61,8 @@ class AlgoShare:
         # 형광펜 버튼
         self.highlight_btn = tk.Button(self.tools_frame, text="🖍️ 형광펜", command=self.toggle_highlight)
         self.highlight_btn.pack(side=tk.LEFT, padx=5)
-        
-        # 형광펜 지우개
+
+        # 형광펜 지우개 버튼
         self.highlight_eraser_btn = tk.Button(self.tools_frame, text="🧽 형광펜 지우개", command=self.toggle_highlight_eraser)
         self.highlight_eraser_btn.pack(side=tk.LEFT, padx=5)
 
@@ -92,7 +92,6 @@ class AlgoShare:
         self.chat_entry = tk.Entry(self.chat_frame, width=40)
         self.chat_entry.pack(pady=10)
         self.chat_entry.bind("<Return>", self.send_chat)
-        
 
     def toggle_pen(self):
         self.drawing_enabled = not self.drawing_enabled
@@ -135,7 +134,7 @@ class AlgoShare:
             self.send_large_message(f"HIGHLIGHT_UPDATE:{highlight_data}")
         except tk.TclError:
             pass
-    
+
     def toggle_highlight_eraser(self):
         self.highlight_eraser_enabled = not self.highlight_eraser_enabled
         if self.highlight_eraser_enabled:
