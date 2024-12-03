@@ -182,7 +182,7 @@ class AlgoShare:
     # 클라이언트와 서버 간의 연결을 설정하는 함수
     def setup_network(self):
         self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # 소켓 객체 생성 (TCP 프로토콜)
-        self.client.connect(('localhost', 8888)) # 서버에 연결 (포트 8888)
+        self.client.connect(('127.0.0.1', 8888)) # 서버에 연결 (포트 8888) 127.0.0.1은 내부 테스트를 위한 로컬호스트 주소
         threading.Thread(target=self.receive_data, daemon=True).start() # 데이터 수신을 위한 별도의 스레드 시작
                                                                         # 스레드는 서버로 부터 지속적으로 데이터를 수신
 
