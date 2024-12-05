@@ -40,7 +40,7 @@ def handle_client(client_socket, client_addr):
         # 클라이언트의 닉네임 수신
         nickname = client_socket.recv(1024).decode('utf-8')
         print(f"{nickname} connected from {client_addr}")
-        broadcast(f"CHAT_MESSAGE:{nickname}님이 채팅에 참여하였습니다.")
+        broadcast(f"CHAT_MESSAGE:{nickname}님이 참여하였습니다.")
 
         # 현재 상태 전송 (코드, 그림, 하이라이트)
         if code_state:
