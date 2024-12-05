@@ -1,7 +1,6 @@
 import socket
 import threading
 
-# 전역 변수 선언
 clients = []  # 연결된 모든 클라이언트 소켓을 저장하는 리스트
 code_state = ""  # 현재 공유 중인 코드 상태
 draw_state = []  # 그림 데이터를 저장하는 리스트
@@ -105,7 +104,7 @@ def handle_client(client_socket, client_addr):
 def start_server():
     try:
         server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        server.bind(('localhost', 8888))
+        server.bind(('0.0.0.0', 8888))
         server.listen(5)
         print("Server started on port 8888")
 
