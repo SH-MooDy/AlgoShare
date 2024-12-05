@@ -14,9 +14,8 @@ def send_large_message(client_socket, message):
 
     try:
         client_socket.sendall(header + message_bytes)  # 헤더와 메시지 전송
-        print(f"Sent full message of length: {message_length}")
     except Exception as e:
-        print(f"Error sending message to client: {e}")
+        print(f"클라이언트로 메시지 전송 중 에러: {e}")
         
 # 모든 클라이언트에게 메시지를 브로드캐스트하는 함수
 def broadcast(message, sender_socket=None):
@@ -26,7 +25,7 @@ def broadcast(message, sender_socket=None):
             try:
                 send_large_message(client, message)
             except Exception as e:
-                print(f"Error sending to client: {e}")
+                print(f"클라이언트로 전송 중 에러: {e}")
                 disconnected_clients.append(client)
     
     # 연결이 끊긴 클라이언트 제거
@@ -63,7 +62,7 @@ def handle_client(client_socket, client_addr):
             while len(data) < message_length:
                 chunk = client_socket.recv(min(message_length - len(data), 1024))
                 if not chunk:
-                    raise ConnectionError("Connection closed while receiving data")
+                    raise ConnectionError("데이터를 수신하는 중 연결이 끊김")
                 data += chunk
             
             message = data.decode('utf-8')
@@ -94,7 +93,7 @@ def handle_client(client_socket, client_addr):
                     del highlight_state[start]  # 하이라이트 정보 삭제
                 broadcast(message)
     except Exception as e:
-        print(f"Error with {client_addr}: {e}")
+        print(f"에러 {client_addr}: {e}")
     finally:
         if client_socket in clients:
             clients.remove(client_socket)
@@ -118,7 +117,7 @@ def start_server():
             clients.append(client_socket)
 
     except Exception as e:
-        print(f"Error starting server: {e}")
+        print(f"서버 시작 중 에러: {e}")
 
 if __name__ == "__main__":
     start_server()
