@@ -1,6 +1,7 @@
 import socket
 import threading
 import tkinter as tk
+import time
 
 class AlgoShare:
     
@@ -188,25 +189,39 @@ class AlgoShare:
 
     # 서버로부터 데이터를 지속적으로 수신, 처리하는 함수
     def receive_data(self):
-        buffer = b"" # 수신된 데이터를 저장할 바이트 버퍼
-        while True:  # 무한 루프로 지속적인 데이터 수신
+        buffer = b""  # 수신 데이터를 저장할 버퍼
+        while True:
             try:
-                chunk = self.client.recv(4096) # 최대 4096 바이트
-                if not chunk: # 연결이 종료된 경우
-                    break
-                buffer += chunk # 수신된 데이터를 버퍼에 추가
-                while len(buffer) >= 4: # 버퍼에 최소 4바이트(메시지 길이 정보)가 있는 경우
-                    message_length = int.from_bytes(buffer[:4], 'big') # 메시지 길이 추출
-                    if len(buffer) < 4 + message_length: #완전한 메시지가 도착하지 않은 경우
+                chunk = self.client.recv(4096)  # 최대 4096바이트 데이터 수신
+                if not chunk:
+                    print("서버와의 연결이 끊어졌습니다.")
+                    self.reconnect()  # 연결 끊김 감지 시 재연결 시도
+                    continue
+
+                buffer += chunk  # 수신된 데이터를 버퍼에 추가
+                
+                # 완전한 메시지 처리
+                while len(buffer) >= 4:  # 헤더 크기(4바이트) 이상의 데이터가 있는 경우
+                    message_length = int.from_bytes(buffer[:4], 'big')  # 메시지 길이 추출
+                    if len(buffer) < 4 + message_length:  # 완전한 메시지가 도착하지 않은 경우
                         break
-                    message = buffer[4:4+message_length].decode('utf-8') # 메시지 디코딩
+                        
+                    message = buffer[4:4+message_length].decode('utf-8')  # 메시지 디코딩
                     buffer = buffer[4+message_length:]  # 처리된 메시지를 버퍼에서 제거
+                    
+                    # 닉네임이 설정되지 않은 경우 메시지 처리 건너뛰기
                     if not hasattr(self, 'nickname') or self.nickname is None:
                         continue
-                    self.process_message(message) # 메시지 처리ㅏ
+                        
+                    self.process_message(message)  # 수신된 메시지 처리
+                    
+            except ConnectionError:
+                print("연결 오류 발생. 재연결을 시도합니다.")
+                self.reconnect()  # 연결 오류 발생 시 재연결 시도
+                time.sleep(1)  # 재연결 시도 전 1초 대기
             except Exception as e:
-                print(f"receive_data 함수 에러: {e}")
-                break
+                print(f"데이터 수신 중 오류 발생: {e}")
+                time.sleep(1)  # 오류 발생 시 1초 대기
             
     # 서버로 부터 받은 메시지를 처리하는 함수
     # 메시지의 유형에 따라 동작 수행
@@ -242,18 +257,34 @@ class AlgoShare:
 
     # 서버로 대용량 메시지 전송 함수 (코드 복사 붙여넣기 시 많은 바이트를 잡아먹기 때문에 만든 함수)
     def send_large_message(self, message):
-        message_bytes = message.encode('utf-8') # 메시지 인코딩
-        message_length = len(message_bytes) # 메시지 길이 계산
-        header = message_length.to_bytes(4, 'big') # 메시지 길이를 4바이트 빅엔디안 형식으로 변환
-        self.client.sendall(header + message_bytes) # 헤더(메시지 길이)와 실제 메시지를 연결하여 전송
+        try:
+            message_bytes = message.encode('utf-8')  # 메시지를 UTF-8로 인코딩
+            message_length = len(message_bytes)      # 메시지 길이 계산
+            header = message_length.to_bytes(4, 'big')  # 메시지 길이를 4바이트 빅엔디안으로 변환
+            self.client.sendall(header + message_bytes)  # 헤더와 메시지를 서버로 전송
+        except ConnectionError:
+            print("서버와의 연결이 끊어졌습니다. 재연결을 시도합니다.")
+            self.reconnect()  # 연결이 끊긴 경우 재연결 시도
+        except Exception as e:
+            print(f"메시지 전송 중 오류 발생: {e}")
+
+    # 서버와의 연결이 끊어졌을 때 재연결을 시도하는 함수
+    def reconnect(self):
+        try:
+            self.client.close()  # 기존 소켓 연결 종료
+            self.setup_network()  # 새로운 네트워크 연결 설정
+            if self.nickname:
+                self.send_large_message(self.nickname)  # 재연결 후 서버에 닉네임 재전송
+        except Exception as e:
+            print(f"재연결 실패: {e}")
 
     # 닉네임 설정 함수
     def set_nickname(self):
-        self.nickname = self.nickname_entry.get().strip() # 닉네임을 받아와 앞뒤 공백 제거
+        self.nickname = self.nickname_entry.get().strip()  # 닉네임을 받아와 앞뒤 공백 제거
         if self.nickname:
-            self.send_large_message(self.nickname) # 서버에 닉네임 전송
-            self.nickname_frame.pack_forget() # 닉네임 입력 프레임을 화면에서 제거
-            self.main_frame.pack(fill=tk.BOTH, expand=True) # 메인 프레임을 화면에 표시
+            self.send_large_message(self.nickname)  # 서버에 닉네임 전송
+            self.nickname_frame.pack_forget()  # 닉네임 입력 프레임을 화면에서 제거
+            self.main_frame.pack(fill=tk.BOTH, expand=True)  # 메인 프레임을 화면에 표시
             
     # 코드 에디터 업데이트 및 동기화 함수
     def code_update(self, event):
