@@ -158,8 +158,8 @@ def start_server():
     global server
     try:
         server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        server.bind(('0.0.0.0', 8888))
-        server.listen(5)
+        server.bind(('0.0.0.0', 8888)) # 서버 IP와 포트 바인딩
+        server.listen(5) # 최대 대기 클라이언트 수 설정
         print("Server started on port 8888")
         
         # 비활성 클라이언트 체크 스레드 시작
@@ -167,7 +167,7 @@ def start_server():
         
         while True:
             try:
-                client_socket, client_addr = server.accept()
+                client_socket, client_addr = server.accept()  # 클라이언트 연결 수락
                 if code_state:
                     send_large_message(client_socket, f"CODE_UPDATE:{code_state}")
                 # 새 클라이언트 연결을 위한 스레드 시작
